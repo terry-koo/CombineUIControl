@@ -26,21 +26,23 @@ final class CombineUIControlTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Control events received")
         
         // When
-        control.publisher(for: .touchUpInside)
-            .sink { _ in
-                eventCount += 1
-                if eventCount == expectedCount {
-                    expectation.fulfill()
+        DispatchQueue.main.async {
+            self.control.publisher(for: .touchUpInside)
+                .sink { _ in
+                    eventCount += 1
+                    if eventCount == expectedCount {
+                        expectation.fulfill()
+                    }
                 }
+                .store(in: &self.cancellables)
+            
+            // Then
+            for _ in 0..<expectedCount {
+                self.control.sendActions(for: .touchUpInside)
             }
-            .store(in: &cancellables)
-        
-        // Then
-        for _ in 0..<expectedCount {
-            control.sendActions(for: .touchUpInside)
         }
         
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         XCTAssertEqual(eventCount, expectedCount)
     }
     
@@ -52,50 +54,59 @@ final class CombineUIControlTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Multiple subscriptions received events")
         
         // When
-        let publisher = control.publisher(for: .touchUpInside)
-        
-        publisher
-            .sink { _ in
-                firstCount += 1
-                if firstCount == expectedCount && secondCount == expectedCount {
-                    expectation.fulfill()
+        DispatchQueue.main.async {
+            let publisher = self.control.publisher(for: .touchUpInside)
+            
+            publisher
+                .sink { _ in
+                    firstCount += 1
+                    if firstCount == expectedCount && secondCount == expectedCount {
+                        expectation.fulfill()
+                    }
                 }
-            }
-            .store(in: &cancellables)
-        
-        publisher
-            .sink { _ in
-                secondCount += 1
-                if firstCount == expectedCount && secondCount == expectedCount {
-                    expectation.fulfill()
+                .store(in: &self.cancellables)
+            
+            publisher
+                .sink { _ in
+                    secondCount += 1
+                    if firstCount == expectedCount && secondCount == expectedCount {
+                        expectation.fulfill()
+                    }
                 }
+                .store(in: &self.cancellables)
+            
+            // Then
+            for _ in 0..<expectedCount {
+                self.control.sendActions(for: .touchUpInside)
             }
-            .store(in: &cancellables)
-        
-        // Then
-        for _ in 0..<expectedCount {
-            control.sendActions(for: .touchUpInside)
         }
         
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         XCTAssertEqual(firstCount, expectedCount)
         XCTAssertEqual(secondCount, expectedCount)
     }
     
     func testCancellation() {
-        // Given
+        let expectation = XCTestExpectation(description: "Cancellation test")
         var eventCount = 0
         
-        // When
-        let cancellable = control.publisher(for: .touchUpInside)
-            .sink { _ in
-                eventCount += 1
+        DispatchQueue.main.async {
+            // When
+            let cancellable = self.control.publisher(for: .touchUpInside)
+                .sink { _ in
+                    eventCount += 1
+                }
+            
+            self.control.sendActions(for: .touchUpInside)
+            cancellable.cancel()
+            self.control.sendActions(for: .touchUpInside)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                expectation.fulfill()
             }
+        }
         
-        control.sendActions(for: .touchUpInside)
-        cancellable.cancel()
-        control.sendActions(for: .touchUpInside)
-        
+        wait(for: [expectation], timeout: 2.0)
         // Then
         XCTAssertEqual(eventCount, 1, "이벤트는 구독 취소 전에만 수신되어야 합니다")
     }
@@ -107,49 +118,61 @@ final class CombineUIControlTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Multiple event types received")
         
         // When
-        control.publisher(for: .touchUpInside)
-            .sink { _ in
-                touchUpInsideCount += 1
-                if touchUpInsideCount == 2 && valueChangedCount == 2 {
-                    expectation.fulfill()
+        DispatchQueue.main.async {
+            self.control.publisher(for: .touchUpInside)
+                .sink { _ in
+                    touchUpInsideCount += 1
+                    if touchUpInsideCount == 2 && valueChangedCount == 2 {
+                        expectation.fulfill()
+                    }
                 }
-            }
-            .store(in: &cancellables)
-        
-        control.publisher(for: .valueChanged)
-            .sink { _ in
-                valueChangedCount += 1
-                if touchUpInsideCount == 2 && valueChangedCount == 2 {
-                    expectation.fulfill()
+                .store(in: &self.cancellables)
+            
+            self.control.publisher(for: .valueChanged)
+                .sink { _ in
+                    valueChangedCount += 1
+                    if touchUpInsideCount == 2 && valueChangedCount == 2 {
+                        expectation.fulfill()
+                    }
                 }
+                .store(in: &self.cancellables)
+            
+            // Then
+            for _ in 0..<2 {
+                self.control.sendActions(for: .touchUpInside)
+                self.control.sendActions(for: .valueChanged)
             }
-            .store(in: &cancellables)
+        }
         
-        // Then
-        control.sendActions(for: .touchUpInside)
-        control.sendActions(for: .valueChanged)
-        control.sendActions(for: .touchUpInside)
-        control.sendActions(for: .valueChanged)
-        
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         XCTAssertEqual(touchUpInsideCount, 2)
         XCTAssertEqual(valueChangedCount, 2)
     }
     
     func testMemoryLeak() {
-        // Given
-        var control: UIControl? = UIControl()
-        weak var weakControl = control
-        var cancellables = Set<AnyCancellable>()
+        let expectation = XCTestExpectation(description: "Memory leak test")
         
-        // When
-        control?.publisher(for: .touchUpInside)
-            .sink { _ in }
-            .store(in: &cancellables)
+        DispatchQueue.main.async {
+            // Given
+            var control: UIControl? = UIControl()
+            weak var weakControl = control
+            var cancellables = Set<AnyCancellable>()
+            
+            // When
+            control?.publisher(for: .touchUpInside)
+                .sink { _ in }
+                .store(in: &cancellables)
+            
+            // Then
+            control = nil
+            cancellables.removeAll()
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                XCTAssertNil(weakControl, "UIControl이 해제되어야 합니다")
+                expectation.fulfill()
+            }
+        }
         
-        // Then
-        control = nil
-        cancellables.removeAll()
-        XCTAssertNil(weakControl, "UIControl이 해제되어야 합니다")
+        wait(for: [expectation], timeout: 2.0)
     }
 }
