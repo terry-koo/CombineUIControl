@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/Users/tpc/CombineUIControl/.build/arm64-apple-macosx/debug/CombineUIControlTests.build/master.swiftdeps"
+  },
+  "/Users/tpc/CombineUIControl/Tests/CombineUIControlTests/CombineUIControlTests.swift": {
+    "dependencies": "/Users/tpc/CombineUIControl/.build/arm64-apple-macosx/debug/CombineUIControlTests.build/CombineUIControlTests.d",
+    "object": "/Users/tpc/CombineUIControl/.build/arm64-apple-macosx/debug/CombineUIControlTests.build/CombineUIControlTests.swift.o",
+    "swiftmodule": "/Users/tpc/CombineUIControl/.build/arm64-apple-macosx/debug/CombineUIControlTests.build/CombineUIControlTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/tpc/CombineUIControl/.build/arm64-apple-macosx/debug/CombineUIControlTests.build/CombineUIControlTests.swiftdeps"
+  }
+}

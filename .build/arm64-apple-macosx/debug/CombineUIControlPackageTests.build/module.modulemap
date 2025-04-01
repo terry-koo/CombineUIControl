@@ -1,0 +1,4 @@
+module CombineUIControlPackageTests {
+    header "/Users/tpc/CombineUIControl/.build/arm64-apple-macosx/debug/CombineUIControlPackageTests.build/CombineUIControlPackageTests-Swift.h"
+    requires objc
+}

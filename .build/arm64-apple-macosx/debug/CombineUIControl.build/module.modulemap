@@ -1,0 +1,4 @@
+module CombineUIControl {
+    header "/Users/tpc/CombineUIControl/.build/arm64-apple-macosx/debug/CombineUIControl.build/CombineUIControl-Swift.h"
+    requires objc
+}
